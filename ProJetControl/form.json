@@ -1,0 +1,13 @@
+{
+  "elements": [
+    {"type":"SelectInstance", "name": "ProJetDevice","caption":"ProJet LED Stripe ID"}
+  ],
+  "actions": [
+    {"type": "Button", "label": "Test AN", "onClick": "PJ_SetState($id, true);" },
+    {"type": "Button", "label": "Test AUS", "onClick": "PJ_SetState($id, false);" }
+  ],
+  "status":  [
+    {"code": 101, "icon": "inactive", "caption": "Konfiguration ungültig."},
+    {"code": 102, "icon": "active", "caption": "Konfiguration gültig."}
+  ] 	
+}

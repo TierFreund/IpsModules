@@ -1,0 +1,11 @@
+{
+	"id": "{F6F3A773-F685-1012-805E-83FD02122015}",
+	"name": "ProJetEx",
+	"type": 3,
+	"vendor": "Xaver",
+	"aliases": ["ProJet RGBW-868 (Stripe) Control"],
+    "parentRequirements": [],
+    "childRequirements": [],
+    "implemented": [],
+	"prefix": "PJ"
+}
