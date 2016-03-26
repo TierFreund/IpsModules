@@ -1,6 +1,7 @@
 {
   "elements": [
-    {"type":"SelectInstance", "name": "ProJetDevice","caption":"ProJet LED Stripe ID"}
+    {"type":"SelectInstance", "name": "ProJetDevice","caption":"ProJet LED Stripe ID"},
+    {"type":"CheckBox", "name": "DimState","caption":"Status-Änderungen Dimmen"}
   ],
   "actions": [
     {"type": "Button", "label": "Test AN", "onClick": "PJ_SetState($id, true);" },

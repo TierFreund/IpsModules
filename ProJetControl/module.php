@@ -9,6 +9,7 @@ class ProJetEx extends IPSModule {
 	public function Create(){
 		parent::Create();
 		$this->RegisterPropertyInteger('ProJetDevice', 0);
+		$this->RegisterPropertyBoolean('DimState', true);
 	}
 	public function ApplyChanges(){
 		parent::ApplyChanges();
@@ -44,7 +45,8 @@ class ProJetEx extends IPSModule {
 	public function UpdateColor(){
 		if(!$this->ReadPropertyInteger('ProJetDevice'))die('Invalid or no ProJetDevice selected!');
 		$DeviceColor=$this->DeviceColor();
-		$this->_UpdateColor($DeviceColor);
+//IPS_LOGMessage(__CLASS__.'::'.__FUNCTION__,"Color: $DeviceColor");
+		$this->_UpdateColor($DeviceColor,false);
 	}	
 	public function RequestAction($Ident, $Value) {
 		switch ($Ident){
@@ -57,16 +59,26 @@ class ProJetEx extends IPSModule {
 		if(!$this->ReadPropertyInteger('ProJetDevice'))die('Invalid or no ProJetDevice selected!');
 		$ID = $this->GetIDForIdent('STATE');
 		$OldState = GetValue($ID);
+		$dimState = $this->ReadPropertyInteger('DimState');
 		if( $OldState != $NewState){
+			if($dimState)$deviceId=$this->ReadPropertyInteger('ProJetDevice');
 			if($OldState){
 				$DeviceColor = $this->DeviceColor();
 				IPS_SetInfo($ID, serialize($DeviceColor));
-				$DeviceColor = 0;
+				if($dimState){
+					PJ_DimRGBW($deviceId, 0,2, 0,2, 0,2,0,0);
+					self::_UpdateColor(array(0,0,0),false);
+				} else $DeviceColor=0;
 			}else {
 				if(!$DeviceColor=unserialize(IPS_GetInfo($ID)))
 					$DeviceColor=8355711;
+				if($dimState){
+					$rgb=self::Int2Rgb($DeviceColor);
+					PJ_DimRGBW($deviceId, $rgb[0],2, $rgb[1],2, $rgb[2],2,0,0);
+					self::_UpdateColor($rgb,false);
+				}	
 			}
-			self::_UpdateColor($DeviceColor);
+			if(!$dimState)self::_UpdateColor($DeviceColor);
 		}	
 	}
 	public function SetBrightness(integer $NewBrightness){
@@ -78,6 +90,7 @@ class ProJetEx extends IPSModule {
 				$ID = $this->GetIDForIdent('STATE');
 				if(!$DeviceColor=unserialize(IPS_GetInfo($ID)))
 					$DeviceColor=8355711;
+				
 			}else	
 				$DeviceColor = self::DeviceColor();
 			$NewDeviceColor = self::CalcColor($DeviceColor, $OldBrightness, $NewBrightness);
@@ -93,7 +106,7 @@ class ProJetEx extends IPSModule {
 			if($Target){
 				IPS_SetLinkTargetID($LinkID, $Target);
 				$EventID=IPS_CreateEvent(0);
-				IPS_SetParent($EventID,$LinkID);
+				IPS_SetParent($EventID,$this->InstanceID);// $LinkID);
 				IPS_SetEventTrigger($EventID,1, $Target);
 				IPS_SetEventScript($EventID,'PJ_UpdateColor($_IPS[\'TARGET\']);');
 			}	
@@ -104,10 +117,10 @@ class ProJetEx extends IPSModule {
 			IPS_DeleteLink($LinkID);  
 	}
 
-	private function _UpdateColor($color){
+	private function _UpdateColor($color, $force=true){
 		$rgb=is_array($color)?$color:self::Int2Rgb($color);
 		$identsity = round( max($rgb[0],$rgb[1],$rgb[2])/2.55);
-		if(PJ_SetRGBW($this->ReadPropertyInteger('ProJetDevice'), $rgb[0],$rgb[1],$rgb[2],0)){
+		if(!$force||PJ_SetRGBW($this->ReadPropertyInteger('ProJetDevice'), $rgb[0],$rgb[1],$rgb[2],0)){
 			$this->SetValue('STATE', $identsity>0);
 			$this->SetValue('BRIGHTNESS',$identsity);
 		}
@@ -133,6 +146,7 @@ class ProJetEx extends IPSModule {
 	}
 	private function CalcColor($color, $OldValue, $NewValue){
 		$rgb=is_array($color)?$color:self::Int2Rgb($color);
+		if(!$OldValue)$OldValue= round( max($rgb[0],$rgb[1],$rgb[2])/2.55);
 		$r=round(($rgb[0]/$OldValue)*$NewValue);
 		$g=round(($rgb[1]/$OldValue)*$NewValue);
 		$b=round(($rgb[2]/$OldValue)*$NewValue);
